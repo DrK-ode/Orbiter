@@ -40,6 +40,9 @@ pub fn player_setup(mut commands: Commands, meshes: Res<Meshes>, materials: Res<
     commands.spawn((
         Name::new("PlayerAim"),
         PlayerAim,
+        Mesh3d(meshes.get(MeshType::Crosshair)),
+        MeshMaterial3d(materials.get(MaterialType::Crosshair)),
+        Transform::from_xyz(0., 0., 0.),
         Position::new((0., 0.).into()),
         Velocity::default(),
     ));
