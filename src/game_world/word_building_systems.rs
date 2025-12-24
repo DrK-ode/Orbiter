@@ -1,9 +1,7 @@
-use std::f32::consts::PI;
-
 use bevy::prelude::*;
 
 use crate::physics::motion::motion_components::{
-    Acceleration, AngularDirection, AngularVelocity, Position, Velocity,
+    Acceleration, Direction, AngularVelocity, Position, Velocity,
 };
 use crate::physics::physics_traits::ValueLimit;
 use crate::{
@@ -32,8 +30,8 @@ pub fn player_setup(mut commands: Commands, meshes: Res<Meshes>, materials: Res<
         ValueLimit::<Velocity>::new(1.),
         Acceleration::default(),
         ForceAndInertia::new(1.),
-        AngularDirection::new(PI / 2.),
-        TargetDirection::new(PI / 2.),
+        Direction::new(Dir2::Y),
+        TargetDirection::new(Dir2::Y),
         AngularVelocity::default(),
         ValueLimit::<AngularVelocity>::new(2.),
     ));

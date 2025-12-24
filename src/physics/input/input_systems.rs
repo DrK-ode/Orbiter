@@ -1,8 +1,6 @@
-use std::f32::consts::PI;
 
 use bevy::{
-    prelude::*,
-    window::{CursorOptions, PrimaryWindow},
+    prelude::*, window::{CursorOptions, PrimaryWindow}
 };
 use leafwing_input_manager::prelude::*;
 
@@ -32,16 +30,16 @@ pub fn input_setup(
     );
 
     let mut cursor_options = cursor_options.into_inner();
-    cursor_options.visible = true;
+    cursor_options.visible = false;
 }
 
 pub fn controller_ship_thrust(
     action: Res<ActionState<ShipAction>>,
-    player_ship: Single<(&mut ForceAndInertia, &AngularDirection, &PlayerShip)>,
+    player_ship: Single<(&mut ForceAndInertia, &Direction, &PlayerShip)>,
 ) {
     let (mut force, direction, ship) = player_ship.into_inner();
     if action.pressed(&ShipAction::EngageEngine) {
-        let engine_force = direction.get_vec() * ship.thrust;
+        let engine_force = direction.as_vec2() * ship.thrust;
         force.force += engine_force;
     }
 }
@@ -86,35 +84,33 @@ pub fn set_ship_course(
         &mut TargetDirection,
         &Velocity,
         &Position,
-        &AngularDirection,
+        &Direction,
         &mut PlayerShip,
     )>,
 ) {
     let aim_position = aim_query.into_inner();
     let (mut target_direction, velocity, position, direction, mut ship) = ship_query.into_inner();
 
-    target_direction.set_angle(if ship_action.pressed(&ShipAction::OrientPrograde) {
+    target_direction.set_value(if ship_action.pressed(&ShipAction::OrientPrograde) {
         ship.reorient_mode = ReorientMode::Prograde;
-        velocity.get_value().to_angle()
+        Dir2::new_unchecked(velocity.normalize())
     } else if ship_action.pressed(&ShipAction::OrientRetrograde) {
         ship.reorient_mode = ReorientMode::Retrograde;
-        velocity.get_value().to_angle() + PI
+        Rot2::from_sin_cos(0., -1.) * Dir2::new_unchecked(velocity.normalize())
     } else if aim_position.get_value().distance_squared(position.get_value()) > 1. {
         ship.reorient_mode = ReorientMode::Aim;
-        (aim_position.get_value() - position.get_value()).to_angle()
+        Dir2::new_unchecked((aim_position.get_value() - position.get_value()).normalize())
     } else {
         ship.reorient_mode = ReorientMode::Free;
-        direction.get_angle()
+        ***direction
     });
 }
 
 pub fn seek_target_direction(
     time: Res<Time<Fixed>>,
-    directions: Query<(&TargetDirection, &AngularDirection, &mut AngularVelocity)>,
+    directions: Query<(&TargetDirection, &Direction, &mut AngularVelocity)>,
 ) {
     for (target, current, mut velocity) in directions {
-        let diff = target.angle_to(current.get_angle());
-        let speed = diff / time.delta_secs();
-        velocity.set_value(speed);
+        velocity.set_value(current.rotation_to(***target).as_radians() / time.delta_secs());
     }
 }

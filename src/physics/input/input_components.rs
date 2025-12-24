@@ -17,11 +17,11 @@ pub enum ReorientMode {
 
 #[derive(Component, Debug, Deref, DerefMut, Reflect)]
 pub struct TargetDirection {
-    property: AngleLikeValue,
+    property: PropertyValue<Dir2>,
 }
 
 impl TargetDirection {
-    pub fn new(angle: f32) -> Self {
-        Self { property: AngleLikeValue::new(angle) }
+    pub fn new(dir: Dir2) -> Self {
+        Self { property: PropertyValue::new(dir) }
     }
 }

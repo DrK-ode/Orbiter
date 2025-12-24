@@ -48,18 +48,19 @@ pub fn calc_angular_velocity(
     }
 }
 
-pub fn calc_direction(time: Res<Time>, bodies: Query<(&mut AngularDirection, &AngularVelocity)>) {
+pub fn calc_direction(time: Res<Time>, bodies: Query<(&mut Direction, &AngularVelocity)>) {
     for (mut direction, angular_velocity) in bodies {
-        direction.rotate(angular_velocity.get_value() * time.delta_secs());
+        let new_direction = Rot2::radians(angular_velocity.get_value() * time.delta_secs()) * direction.get_value();
+        direction.set_value(new_direction.fast_renormalize());
     }
 }
 
 pub fn interpolate_rotation(
     time: Res<Time<Fixed>>,
-    directions: Query<(&AngularDirection, &mut Transform)>,
+    directions: Query<(&Direction, &mut Transform)>,
 ) {
     for (direction, mut transform) in directions {
-        transform.rotation = Quat::from_rotation_z(direction.estimate(time.overstep_fraction()));
+        transform.rotation = Quat::from_rotation_z(direction.estimate(time.overstep_fraction()).rotation_from_x().as_radians())
     }
 }
 

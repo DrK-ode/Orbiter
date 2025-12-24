@@ -26,14 +26,14 @@ pub struct Acceleration {
 }
 
 #[derive(Component, Debug, Deref, DerefMut, Reflect)]
-pub struct AngularDirection {
-    property: AngleLikeValue,
+pub struct Direction {
+    property: PropertyValue<Dir2>,
 }
 
-impl AngularDirection {
-    pub fn new(angle: f32) -> Self {
+impl Direction {
+    pub fn new(dir: Dir2) -> Self {
         Self {
-            property: AngleLikeValue::new_with_buffer(angle),
+            property: PropertyValue::new_with_buffer(dir),
         }
     }
 }
