@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::physics::input::input_components::ReorientMode;
+use super::input::input_components::ReorientMode;
 
 #[derive(Debug, Component, Reflect)]
 pub struct PlayerShip {

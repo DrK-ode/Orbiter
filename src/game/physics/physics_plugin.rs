@@ -1,19 +1,20 @@
 use bevy::prelude::*;
 use leafwing_input_manager::plugin::InputManagerPlugin;
 
-use super::{
-    force::force_systems::*, input::input_actions::*, input::input_systems::*,
-    motion::motion_systems::*, prelude::*,
-};
+use super::super::input::input_actions::*;
+use super::super::input::input_systems::*;
+use super::{force::force_systems::*, motion::motion_systems::*, prelude::*};
+use crate::game::game_systems::GameSystemSet;
 
 pub struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_state::<AimInput>()
+        app.insert_resource(Time::<Fixed>::from_hz(60.))
+            .init_state::<AimInput>()
             .add_plugins(InputManagerPlugin::<ShipAction>::default())
             .add_plugins(InputManagerPlugin::<NavigationAction>::default())
-            .add_systems(Startup, input_setup)
+            .add_systems(Startup, setup_input)
             .add_systems(
                 FixedUpdate,
                 (
@@ -25,8 +26,8 @@ impl Plugin for PhysicsPlugin {
                         controller_ship_thrust,
                     )
                         .chain(),
-                    calc_gravitational_force,
-                    ((
+                    (calc_gravitational_force).chain(),
+                    (
                         calc_angular_acceleration,
                         limit_float::<AngularAcceleration>,
                         calc_angular_velocity,
@@ -38,13 +39,11 @@ impl Plugin for PhysicsPlugin {
                         limit_vec2::<Velocity>,
                         calc_position,
                     )
-                        .chain(),),
+                        .chain(),
+                    (reset_force, reset_torque, interpolate_position, interpolate_rotation),
                 )
-                    .chain(),
-            )
-            .add_systems(
-                FixedPostUpdate,
-                (reset_force, reset_torque, interpolate_position, interpolate_rotation),
+                    .chain()
+                    .in_set(GameSystemSet::Physics),
             );
     }
 }

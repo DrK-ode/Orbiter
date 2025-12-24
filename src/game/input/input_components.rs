@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
-use crate::physics::physics_traits::*;
+use crate::game::physics::physics_types::*;
 
 #[derive(Debug, Component)]
-pub struct PlayerAim;
+pub struct PlayerReticle;
 
 #[derive(Debug, Default, Eq, PartialEq, Reflect)]
 pub enum ReorientMode {
@@ -17,11 +17,13 @@ pub enum ReorientMode {
 
 #[derive(Component, Debug, Deref, DerefMut, Reflect)]
 pub struct TargetDirection {
-    property: PropertyValue<Dir2>,
+    property: Buffered<Dir2>,
 }
 
 impl TargetDirection {
     pub fn new(dir: Dir2) -> Self {
-        Self { property: PropertyValue::new(dir) }
+        Self {
+            property: Buffered::new(dir),
+        }
     }
 }

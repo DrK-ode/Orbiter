@@ -1,49 +1,49 @@
 use bevy::prelude::*;
 
-use crate::physics::physics_traits::*;
+use crate::game::physics::physics_types::*;
 
-#[derive(Component, Debug, Deref, DerefMut, Reflect)]
+#[derive(Component, Debug, Default, Deref, DerefMut, Reflect)]
 pub struct Position {
-    pub property: PropertyValue<Vec2>,
+    pub property: Buffered<Vec2>,
 }
 
 impl Position {
     pub fn new(value: Vec2) -> Self {
         Self {
-            property: PropertyValue::new_with_buffer(value)
+            property: Buffered::new(value)
         }
     }
 }
 
 #[derive(Component, Debug, Default, Deref, DerefMut, Reflect)]
 pub struct Velocity {
-    property: PropertyValue<Vec2>,
+    property: Vec2,
 }
 
 #[derive(Component, Debug, Default, Deref, DerefMut, Reflect)]
 pub struct Acceleration {
-    property: PropertyValue<Vec2>,
+    property: Vec2,
 }
 
 #[derive(Component, Debug, Deref, DerefMut, Reflect)]
 pub struct Direction {
-    property: PropertyValue<Dir2>,
+    property: Buffered<Dir2>,
 }
 
 impl Direction {
     pub fn new(dir: Dir2) -> Self {
         Self {
-            property: PropertyValue::new_with_buffer(dir),
+            property: Buffered::new(dir),
         }
     }
 }
 
 #[derive(Component, Debug, Default, Deref, DerefMut, Reflect)]
 pub struct AngularVelocity {
-    property: PropertyValue<f32>,
+    property: f32,
 }
 
 #[derive(Component, Debug, Default, Deref, DerefMut, Reflect)]
 pub struct AngularAcceleration {
-    property: PropertyValue<f32>,
+    property: f32,
 }
