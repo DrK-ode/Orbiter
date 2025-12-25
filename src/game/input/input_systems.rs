@@ -1,11 +1,14 @@
-use bevy::{
-    prelude::*,
-    window::{CursorOptions, PrimaryWindow},
-};
+use std::cmp::Ordering;
+
+use bevy::prelude::*;
+use bevy::window::{CursorOptions, PrimaryWindow};
 use leafwing_input_manager::prelude::*;
 
-use super::{input_actions::*, input_components::*};
-use crate::game::{physics::prelude::*, scenes::scene_in_game::PlayerShip};
+use super::input_actions::*;
+use super::input_components::*;
+use crate::game::physics::prelude::*;
+use crate::game::scenes::scene_in_game::PlayerShip;
+use crate::game::view::view_components::{CameraZoom, GameCamera};
 
 pub fn setup_input(
     mut commands: Commands,
@@ -50,7 +53,7 @@ pub fn controller_ship_thrust(
 pub fn mouse_aim(
     aim_query: Single<&mut Position, With<PlayerReticle>>,
     window_query: Single<&Window, With<PrimaryWindow>>,
-    camera_query: Single<(&Camera, &GlobalTransform)>,
+    camera_query: Single<(&Camera, &GlobalTransform), With<GameCamera>>,
 ) {
     let mut aim = aim_query.into_inner();
     let window = window_query.into_inner();
@@ -91,13 +94,16 @@ pub fn set_ship_course(
     target_direction.assign(if ship_action.pressed(&ShipAction::OrientPrograde) {
         ship.reorient_mode = ReorientMode::Prograde;
         Dir2::new_unchecked(velocity.normalize())
-    } else if ship_action.pressed(&ShipAction::OrientRetrograde) {
+    }
+    else if ship_action.pressed(&ShipAction::OrientRetrograde) {
         ship.reorient_mode = ReorientMode::Retrograde;
         Rot2::from_sin_cos(0., -1.) * Dir2::new_unchecked(velocity.normalize())
-    } else if aim_position.value().distance_squared(position.value()) > 1. {
+    }
+    else if aim_position.value().distance_squared(position.value()) > 1. {
         ship.reorient_mode = ReorientMode::Aim;
         Dir2::new_unchecked((aim_position.value() - position.value()).normalize())
-    } else {
+    }
+    else {
         ship.reorient_mode = ReorientMode::Free;
         ***direction
     });
@@ -109,5 +115,22 @@ pub fn seek_target_direction(
 ) {
     for (target, current, mut velocity) in directions {
         **velocity = current.rotation_to(***target).as_radians() / time.delta_secs();
+    }
+}
+
+pub fn scroll_zoom(
+    navigation_action: Res<ActionState<NavigationAction>>,
+    query: Single<&mut CameraZoom, With<GameCamera>>,
+) {
+    if let Some(zoom) = navigation_action.axis_data(&NavigationAction::Zoom) {
+        let mut camera_zoom = query.into_inner();
+        let zoom = match zoom.fixed_update_value.partial_cmp(&0.) {
+            Some(Ordering::Equal) | None => return,
+            Some(Ordering::Greater) => 1. - 1. / camera_zoom.zoom_factor,
+            Some(Ordering::Less) => 1. + camera_zoom.zoom_factor,
+        };
+        let z = (camera_zoom.zoom_target * zoom)
+            .clamp(camera_zoom.zoom_range.start, camera_zoom.zoom_range.end);
+        camera_zoom.zoom_target = z;
     }
 }

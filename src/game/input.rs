@@ -9,7 +9,7 @@ use input_actions::*;
 use input_systems::*;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum InputSystems{
+pub enum InputSystems {
     InGame,
     Menu,
 }
@@ -27,6 +27,7 @@ impl Plugin for InputPlugin {
                 (
                     keyboard_aim.run_if(in_state(AimInput::Keyboard)),
                     mouse_aim.run_if(in_state(AimInput::Mouse)),
+                    scroll_zoom,
                     set_ship_course,
                     seek_target_direction,
                     controller_ship_thrust,

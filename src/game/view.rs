@@ -12,6 +12,6 @@ impl Plugin for ViewPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameScene::InGame), spawn_game_view)
             .add_systems(OnExit(GameScene::InGame), spawn_other_view)
-            .add_systems(Update, follow_player.run_if(in_state(GameScene::InGame)));
+            .add_systems(Update, move_camera.run_if(in_state(GameScene::InGame)));
     }
 }
