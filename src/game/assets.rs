@@ -1,7 +1,9 @@
+pub mod asset_resources;
+
 use bevy::prelude::*;
 
-use super::asset_resources::Meshes;
-use super::asset_resources::Materials;
+use asset_resources::Meshes;
+use asset_resources::Materials;
 
 pub struct AssetsPlugin;
 

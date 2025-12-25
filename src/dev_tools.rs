@@ -5,6 +5,8 @@ use bevy::text::FontSmoothing;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
+use crate::game::scenes::GameScene;
+
 #[derive(Default)]
 pub struct DevToolsPlugin;
 
@@ -31,6 +33,26 @@ impl Plugin for DevToolsPlugin {
         .add_plugins(EguiPlugin::default())
         .add_plugins(
             WorldInspectorPlugin::new().run_if(input_toggle_active(false, KeyCode::KeyI)),
+        )
+        .add_systems(
+            Update,
+            (
+                log_state_change_request.run_if(resource_changed::<NextState<GameScene>>),
+                log_state_change.run_if(state_changed::<GameScene>),
+            )
         );
     }
+}
+
+pub fn log_state_change_request(state: Res<NextState<GameScene>>) {
+    match state.into_inner() {
+        NextState::Unchanged => {},
+        NextState::Pending(state) => {
+            info!("State requested to change to {:#?}.", state);
+        },
+    };
+}
+
+pub fn log_state_change(state: Res<State<GameScene>>) {
+    info!("State changed to {:#?}", **state);
 }

@@ -5,7 +5,7 @@ use bevy::{
 use leafwing_input_manager::prelude::*;
 
 use super::{input_actions::*, input_components::*};
-use crate::{game::game_components::PlayerShip, game::physics::prelude::*};
+use crate::game::{physics::prelude::*, scenes::scene_in_game::PlayerShip};
 
 pub fn setup_input(
     mut commands: Commands,

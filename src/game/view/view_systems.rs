@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-use crate::game::{game_states::ScreenState, view::view_components::*};
+use crate::game::{scenes::GameScene, view::view_components::*};
 
 pub fn spawn_game_view(mut commands: Commands) {
-    commands.spawn((game_camera(), DespawnOnExit(ScreenState::InGame)));
-    commands.spawn((game_light(), DespawnOnExit(ScreenState::InGame)));
+    commands.spawn((game_camera(), DespawnOnExit(GameScene::InGame)));
+    commands.spawn((game_light(), DespawnOnExit(GameScene::InGame)));
 }
 
 fn game_camera() -> impl Bundle {
@@ -21,17 +21,17 @@ fn game_light() -> impl Bundle {
             shadows_enabled: true,
             ..Default::default()
         },
-        Transform::from_xyz(2., 2., 10.).looking_at((0., 0., 0.).into(), Vec3::Y),
+        Transform::from_xyz(0., 0., 5.).looking_at((0., 0., 0.).into(), Vec3::Y),
     )
 }
 
 pub fn spawn_other_view(mut commands: Commands) {
-    commands.spawn((other_camera(), DespawnOnEnter(ScreenState::InGame)));
-    commands.spawn((other_light(), DespawnOnEnter(ScreenState::InGame)));
+    commands.spawn((other_camera(), DespawnOnEnter(GameScene::InGame)));
+    commands.spawn((other_light(), DespawnOnEnter(GameScene::InGame)));
 }
 
 fn other_camera() -> impl Bundle {
-    (Name::new("OtherCamera"), Camera2d, Transform::from_xyz(0., 0., 10.))
+    (Name::new("OtherCamera"), Camera2d, Transform::from_xyz(0., 0., 5.))
 }
 
 fn other_light() -> impl Bundle {
