@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+avian3d = "0.4.1"
 bevy = { version = "0.17", features = ["bevy_dev_tools", "dynamic_linking"] }
 bevy-inspector-egui = "0.35.0"
 enum-collections = "1.7.0"

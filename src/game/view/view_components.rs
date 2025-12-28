@@ -3,7 +3,10 @@ use std::ops::Range;
 use bevy::prelude::*;
 
 #[derive(Component, Debug, Reflect)]
-pub struct GameCamera;
+pub struct GameCamera3d;
+
+#[derive(Component, Debug, Reflect)]
+pub struct GameCamera2d;
 
 #[derive(Component, Debug, Reflect)]
 pub struct UiCamera;

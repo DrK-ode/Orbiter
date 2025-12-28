@@ -13,7 +13,7 @@ use {
 };
 
 #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default, Reflect)]
-pub enum GameScene {
+pub enum CurrentScene {
     #[default]
     Splash,
     Title,
@@ -26,7 +26,7 @@ pub struct ScenesPlugin;
 
 impl Plugin for ScenesPlugin {
     fn build(&self, app: &mut App) {
-        app.init_state::<GameScene>().add_plugins((
+        app.init_state::<CurrentScene>().add_plugins((
             plugin_scene_splash,
             plugin_scene_title,
             plugin_scene_loading,
