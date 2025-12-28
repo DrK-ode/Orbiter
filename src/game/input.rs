@@ -25,8 +25,8 @@ impl Plugin for InputPlugin {
             .add_systems(
                 FixedUpdate,
                 (
-                    keyboard_aim.run_if(in_state(AimInput::Keyboard)),
-                    mouse_aim.run_if(in_state(AimInput::Mouse)),
+                    keyboard_reticle_control.run_if(in_state(AimInput::Keyboard)),
+                    mouse_reticle_control.run_if(in_state(AimInput::Mouse)),
                     scroll_zoom,
                     set_ship_course,
                     seek_target_direction,

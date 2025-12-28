@@ -24,7 +24,7 @@ impl Plugin for DevToolsPlugin {
                 refresh_interval: core::time::Duration::from_millis(100),
                 enabled: true,
                 frame_time_graph_config: FrameTimeGraphConfig {
-                    enabled: true,
+                    enabled: false,
                     min_fps: 30.0,
                     target_fps: 60.0,
                 },

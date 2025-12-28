@@ -10,7 +10,7 @@ use leafwing_input_manager::prelude::*;
 use super::{input_actions::*, input_components::*};
 use crate::game::{
     scenes::scene_in_game::{PlayerReticle, PlayerShip},
-    view::view_components::{CameraZoom, GameCamera3d},
+    view::view_components::{CameraZoom, GameCamera2d, GameCamera3d},
 };
 
 pub fn setup_input(
@@ -54,41 +54,36 @@ pub fn controller_ship_thrust(
     }
 }
 
-pub fn mouse_aim(
+pub fn mouse_reticle_control(
     aim_query: Single<&mut Position, With<PlayerReticle>>,
     window_query: Single<&Window, With<PrimaryWindow>>,
-    camera_query: Single<(&Camera, &GlobalTransform), With<GameCamera3d>>,
+    camera2d_query: Single<(&Camera, &GlobalTransform), With<GameCamera2d>>,
 ) {
-    let mut aim_position = aim_query.into_inner();
+    let mut reticle_position = aim_query.into_inner();
     let window = window_query.into_inner();
-    let (camera, camera_transform) = camera_query.into_inner();
+    let (camera2d, camera2d_transform) = camera2d_query.into_inner();
 
-    if let Some(p) = window
-        .cursor_position()
-        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor).ok())
-        .and_then(|ray| {
-            Some(ray).zip(ray.intersect_plane(aim_position.0, InfinitePlane3d::new(Vec3::Z)))
-        })
-        .map(|(ray, p)| ray.get_point(p))
+    if let Some(cursor) = window.cursor_position()
+        && let Ok(ray2d) = camera2d.viewport_to_world_2d(camera2d_transform, cursor)
     {
-        aim_position.0 = p.xy().extend(0.);
+        reticle_position.0 = ray2d.extend(0.);
     }
 }
 
-pub fn keyboard_aim(
+pub fn keyboard_reticle_control(
     navigation_action: Res<ActionState<NavigationAction>>,
-    aim_query: Single<&mut LinearVelocity, With<PlayerReticle>>,
+    reticle_query: Single<&mut LinearVelocity, With<PlayerReticle>>,
 ) {
     const AIM_SPEED: f32 = 2.;
-    let mut aim_velocity = aim_query.into_inner();
+    let mut reticle_velocity = reticle_query.into_inner();
     if let Some(dualaxis) = navigation_action.dual_axis_data(&NavigationAction::KeyboardAim) {
-        aim_velocity.0 += AIM_SPEED * dualaxis.fixed_update_pair.extend(0.);
+        reticle_velocity.0 += AIM_SPEED * dualaxis.fixed_update_pair.extend(0.);
     }
 }
 
 pub fn set_ship_course(
     ship_action: Res<ActionState<ShipAction>>,
-    aim_query: Single<&Position, With<PlayerReticle>>,
+    reticle_query: Single<&Position, With<PlayerReticle>>,
     ship_query: Single<(
         &mut DirectionTarget,
         &Position,
@@ -96,14 +91,26 @@ pub fn set_ship_course(
         &LinearVelocity,
         &mut PlayerShip,
     )>,
+    camera2d_query: Single<(&Camera, &GlobalTransform), With<GameCamera2d>>,
+    camera3d_query: Single<(&Camera, &GlobalTransform), With<GameCamera3d>>,
 ) {
-    let aim_position = aim_query.into_inner().0.truncate();
+    let reticle_position = reticle_query.into_inner().0.truncate();
     let (mut direction_target, ship_position, ship_rotation, ship_velocity, mut ship) =
         ship_query.into_inner();
     let ship_position = ship_position.0.truncate();
     let velocity = ship_velocity.0.truncate().normalize();
     let speed_is_nonzero = velocity.length_squared() > 0.;
     const AIM_DEADZONE_RADIUS: f32 = 1.;
+    let (camera2d, camera2d_transform) = camera2d_query.into_inner();
+    let (camera3d, camera3d_transform) = camera3d_query.into_inner();
+
+    let aim_position = convert_2d_to_3d_position(
+        camera2d,
+        camera2d_transform,
+        camera3d,
+        camera3d_transform,
+        reticle_position,
+    );
 
     (ship.reorient_mode, direction_target.0) =
         if ship_action.pressed(&ShipAction::OrientPrograde) && speed_is_nonzero {
@@ -112,8 +119,8 @@ pub fn set_ship_course(
         else if ship_action.pressed(&ShipAction::OrientRetrograde) && speed_is_nonzero {
             (ReorientMode::Retrograde, Rot2::from_sin_cos(0., -1.) * Dir2::new_unchecked(velocity))
         }
-        else if aim_position.distance_squared(ship_position) > AIM_DEADZONE_RADIUS {
-            let new_dir = Dir2::new_unchecked((aim_position - ship_position).normalize());
+        else if let Some(aim_position) = aim_position && aim_position.truncate().distance_squared(ship_position) > AIM_DEADZONE_RADIUS {
+            let new_dir = Dir2::new_unchecked((aim_position.truncate() - ship_position).normalize());
             (ReorientMode::Aim, new_dir)
         }
         else {
@@ -121,6 +128,24 @@ pub fn set_ship_course(
                 Dir2::new_unchecked((ship_rotation.0 * Vec3::X).truncate().normalize());
             (ReorientMode::Free, ship_direction)
         };
+}
+
+fn convert_2d_to_3d_position(
+    camera2d: &Camera,
+    camera2d_transform: &GlobalTransform,
+    camera3d: &Camera,
+    camera3d_transform: &GlobalTransform,
+    position2d: Vec2,
+) -> Option<Vec3> {
+    camera2d
+        .world_to_viewport(camera2d_transform, position2d.extend(0.))
+        .ok()
+        .and_then(|viewport_position| {
+            camera3d.viewport_to_world(camera3d_transform, viewport_position).ok()
+        })
+        .and_then(|ray| {
+            Some(ray).zip(ray.intersect_plane(Vec3::ZERO, InfinitePlane3d::new(Vec3::Z)))
+        }).map(|(ray, distance)| ray.get_point(distance))
 }
 
 pub fn seek_target_direction(

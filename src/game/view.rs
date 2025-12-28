@@ -7,6 +7,8 @@ use bevy::window::WindowResized;
 use super::scenes::CurrentScene;
 use view_systems::*;
 
+pub const GAME_CAMERA_2D_RENDER_LAYER: usize = 1;
+
 pub struct ViewPlugin;
 
 impl Plugin for ViewPlugin {

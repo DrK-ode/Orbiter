@@ -1,12 +1,15 @@
 use std::f32::consts::PI;
 
-use bevy::camera::Viewport;
-use bevy::prelude::*;
-use bevy::window::WindowResized;
+use bevy::{
+    camera::{visibility::RenderLayers, Viewport},
+    prelude::*,
+    window::WindowResized,
+};
 
-use crate::game::scenes::scene_in_game::PlayerShip;
-use crate::game::scenes::CurrentScene;
-use crate::game::view::view_components::*;
+use crate::game::{
+    scenes::{CurrentScene, scene_in_game::PlayerShip},
+    view::{GAME_CAMERA_2D_RENDER_LAYER, view_components::*},
+};
 
 pub fn on_window_resized(
     mut messages: MessageReader<WindowResized>,
@@ -23,8 +26,9 @@ pub fn on_window_resized(
     }
 }
 
-pub fn setup_views(mut commands: Commands) { 
-    commands.spawn(ui_camera()); }
+pub fn setup_views(mut commands: Commands) {
+    commands.spawn(ui_camera());
+}
 
 pub fn spawn_game_view(mut commands: Commands) {
     const STARTING_POSITION: Vec3 = Vec3::new(0., 0., 10.);
@@ -72,22 +76,20 @@ fn game_camera2d() -> impl Bundle {
             clear_color: ClearColorConfig::None,
             ..Default::default()
         },
-        Transform::from_xyz(0., 0., 5.),
+        RenderLayers::layer(GAME_CAMERA_2D_RENDER_LAYER),
     )
 }
 
 fn ui_camera() -> impl Bundle {
     (
         Name::new("UiCamera"),
-        UiCamera,
+        IsDefaultUiCamera,
         Camera2d,
         Camera {
-            order: 1000,
+            order: 10,
             clear_color: ClearColorConfig::None,
             ..Default::default()
         },
-        IsDefaultUiCamera,
-        Transform::from_xyz(0., 0., 5.),
     )
 }
 

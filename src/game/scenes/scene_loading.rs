@@ -25,7 +25,7 @@ pub fn plugin_scene_loading(app: &mut App) {
 
 fn check_loading_status(handles: Res<ResourceHandles>){
     if !handles.is_all_loaded(){
-        dbg!("Resources are still loading...");
+        info!("Resources are still loading...");
     }
 }
 

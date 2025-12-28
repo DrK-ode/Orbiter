@@ -1,7 +1,7 @@
 use avian3d::prelude::*;
-use bevy::{prelude::*, scene::SceneInstanceReady};
+use bevy::{camera::visibility::RenderLayers, color::palettes::css::PINK, prelude::*, scene::SceneInstanceReady};
 
-use crate::game::{assets::asset_resources::*, input::input_components::*, scenes::CurrentScene};
+use crate::game::{assets::asset_resources::*, input::input_components::*, scenes::CurrentScene, view::GAME_CAMERA_2D_RENDER_LAYER};
 
 #[derive(Debug, Component, Reflect)]
 pub struct PlayerShip {
@@ -68,11 +68,15 @@ pub fn spawn_in_game_screen(mut commands: Commands, ship_assets: Res<PlayerAsset
         Name::new("PlayerReticle"),
         DespawnOnExit(CurrentScene::InGame),
         PlayerReticle,
-        Transform::from_xyz(0., 0., 0.1),
         LockedAxes::ROTATION_LOCKED,
         RigidBody::Kinematic,
-        Mesh3d(ship_assets.reticle_mesh.clone()),
-        MeshMaterial3d(ship_assets.reticle_material.clone()),
+        Sprite {
+            image: ship_assets.reticle_image.clone(),
+            color: PINK.into(),
+            custom_size: Some(Vec2::new(50., 50.)),
+            ..Default::default()
+        },
+        RenderLayers::layer(GAME_CAMERA_2D_RENDER_LAYER),
     ));
 }
 

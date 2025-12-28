@@ -9,9 +9,6 @@ pub struct GameCamera3d;
 pub struct GameCamera2d;
 
 #[derive(Component, Debug, Reflect)]
-pub struct UiCamera;
-
-#[derive(Component, Debug, Reflect)]
 pub struct GameLight;
 
 #[derive(Component, Debug, Reflect)]
