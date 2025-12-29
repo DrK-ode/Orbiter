@@ -1,87 +1,25 @@
 use std::f32::consts::PI;
 
+use avian3d::prelude::*;
 use bevy::{
-    camera::{visibility::RenderLayers, Viewport},
+    camera::visibility::RenderLayers,
     prelude::*,
     window::WindowResized,
 };
 
 use crate::game::{
-    scenes::{CurrentScene, scene_in_game::PlayerShip},
-    view::{GAME_CAMERA_2D_RENDER_LAYER, view_components::*},
+    assets::asset_resources::SpaceAssets,
+    scenes::{scene_in_game::PlayerShip, GameScene},
+    view::{view_components::*, CAMERA_2D_BACKGROUND_LAYER, CAMERA_2D_FOREGROUND_LAYER},
 };
 
-pub fn on_window_resized(
-    mut messages: MessageReader<WindowResized>,
-    camera: Single<&mut Camera, With<GameCamera3d>>,
-) {
-    let mut camera = camera.into_inner();
-    for message in messages.read() {
-        camera.viewport = Some(Viewport {
-            physical_position: ((0.1 * message.width) as u32, 0).into(),
-            physical_size: ((0.8 * message.width) as u32, message.height as u32).into(),
-            depth: 0. ..1.,
-        });
-        info!("Window resized to {} x {}", message.width, message.height);
-    }
-}
+pub fn on_window_resized(mut _messages: MessageReader<WindowResized>) {}
 
 pub fn setup_views(mut commands: Commands) {
-    commands.spawn(ui_camera());
-}
-
-pub fn spawn_game_view(mut commands: Commands) {
-    const STARTING_POSITION: Vec3 = Vec3::new(0., 0., 10.);
-    commands
-        .spawn((game_camera3d(STARTING_POSITION), DespawnOnExit(CurrentScene::InGame)))
-        .with_child((game_light(), DespawnOnExit(CurrentScene::InGame)));
-    commands.spawn((game_camera2d(), DespawnOnExit(CurrentScene::InGame)));
-}
-
-pub fn spawn_other_view(mut commands: Commands) {
-    commands.spawn((other_light(), DespawnOnEnter(CurrentScene::InGame)));
-}
-
-fn game_camera3d(starting_position: Vec3) -> impl Bundle {
-    (
-        Name::new("GameCamera3D"),
-        GameCamera3d,
-        Camera3d::default(),
-        Camera {
-            order: 0,
-            clear_color: Color::linear_rgb(0.1, 0.1, 0.2).into(),
-            ..Default::default()
-        },
-        CameraZoom {
-            zoom_range:  10. ..100.,
-            zoom_speed:  2.,
-            zoom_factor: 0.1,
-            zoom_target: starting_position.z,
-        },
-        Projection::Perspective(PerspectiveProjection {
-            fov: PI / 4.,
-            ..Default::default()
-        }),
-        Transform::from_translation(starting_position),
-    )
-}
-
-fn game_camera2d() -> impl Bundle {
-    (
-        Name::new("GameCamera2D"),
-        GameCamera2d,
-        Camera2d,
-        Camera {
-            order: 1,
-            clear_color: ClearColorConfig::None,
-            ..Default::default()
-        },
-        RenderLayers::layer(GAME_CAMERA_2D_RENDER_LAYER),
-    )
-}
-
-fn ui_camera() -> impl Bundle {
-    (
+    //
+    // UI camera
+    //
+    commands.spawn((
         Name::new("UiCamera"),
         IsDefaultUiCamera,
         Camera2d,
@@ -90,26 +28,105 @@ fn ui_camera() -> impl Bundle {
             clear_color: ClearColorConfig::None,
             ..Default::default()
         },
-    )
+    ));
 }
 
-fn game_light() -> impl Bundle {
-    (
-        Name::new("GameLight"),
-        GameLight,
-        DirectionalLight {
-            color: Color::WHITE,
-            illuminance: 5_000.,
-            shadows_enabled: true,
+pub fn spawn_game_view(mut commands: Commands, space_assets: Res<SpaceAssets>) {
+    //
+    // Main camera
+    //
+    const MAIN_CAMERA_STARTING_POSITION: Vec3 = Vec3::new(0., 0., 10.);
+    commands
+        .spawn((
+            Name::new("GameCamera3D"),
+            DespawnOnExit(GameScene::InGame),
+            MainCamera,
+            Camera3d::default(),
+            Camera {
+                order: 0,
+                clear_color: ClearColorConfig::None,
+                ..Default::default()
+            },
+            CameraZoom {
+                zoom_range:  10. ..100.,
+                zoom_speed:  2.,
+                zoom_factor: 0.1,
+                zoom_target: MAIN_CAMERA_STARTING_POSITION.z,
+            },
+            Projection::Perspective(PerspectiveProjection {
+                fov: PI / 4.,
+                ..Default::default()
+            }),
+            Transform::from_translation(MAIN_CAMERA_STARTING_POSITION),
+        ))
+        //
+        // Game light
+        //
+        .with_child((
+            Name::new("GameLight"),
+            DespawnOnExit(GameScene::InGame),
+            GameLight,
+            DirectionalLight {
+                color: Color::WHITE,
+                illuminance: 10_000.,
+                shadows_enabled: true,
+                ..Default::default()
+            },
+            Transform::from_xyz(0., 0., 0.).looking_at((0., 0., 0.).into(), Vec3::Y),
+        ));
+    //
+    // Foreground camera
+    //
+    commands.spawn((
+        Name::new("Foreground Camera"),
+        DespawnOnExit(GameScene::InGame),
+        ForegroundCamera,
+        Camera2d,
+        Camera {
+            order: 1,
+            clear_color: ClearColorConfig::None,
             ..Default::default()
         },
-        Transform::from_xyz(0., 0., 0.).looking_at((0., 0., 0.).into(), Vec3::Y),
-    )
+        RenderLayers::layer(CAMERA_2D_FOREGROUND_LAYER),
+    ));
+    //
+    // Background camera
+    //
+    commands.spawn((
+        Name::new("Background Camera"),
+        DespawnOnExit(GameScene::InGame),
+        BackgroundCamera,
+        Camera2d,
+        Camera {
+            order: -1,
+            clear_color: Color::linear_rgb(0.1, 0.1, 0.2).into(),
+            ..Default::default()
+        },
+        Projection::Orthographic(OrthographicProjection {
+            scaling_mode: bevy::camera::ScalingMode::AutoMax {
+                max_width:  1.,
+                max_height: 1.,
+            },
+            ..OrthographicProjection::default_2d()
+        }),
+        RenderLayers::layer(CAMERA_2D_BACKGROUND_LAYER),
+    ));
+    //
+    // Background quad
+    //
+    commands.spawn((
+        Name::new("Background"),
+        RenderLayers::layer(CAMERA_2D_BACKGROUND_LAYER),
+        Mesh2d(space_assets.starry_mesh.clone()),
+        MeshMaterial2d(space_assets.starry_material.clone()),
+        Transform::default(),
+    ));
 }
 
-fn other_light() -> impl Bundle {
-    (
+pub fn spawn_other_view(mut commands: Commands) {
+    commands.spawn((
         Name::new("UiLight"),
+        DespawnOnEnter(GameScene::InGame),
         UiLight,
         PointLight {
             color: Color::WHITE,
@@ -120,16 +137,17 @@ fn other_light() -> impl Bundle {
             ..Default::default()
         },
         Transform::from_xyz(2., 2., 10.),
-    )
+    ));
 }
 
 pub fn move_camera(
     time: Res<Time>,
-    camera_query: Single<(&mut Transform, &CameraZoom), (With<GameCamera3d>, Without<PlayerShip>)>,
-    ship_query: Single<&Transform, With<PlayerShip>>,
+    camera_query: Single<(&mut Transform, &CameraZoom), (With<MainCamera>, Without<PlayerShip>)>,
+    ship_query: Single<&Position, With<PlayerShip>>,
 ) {
     let (mut camera_transform, camera_zoom) = camera_query.into_inner();
-    let ship = ship_query.into_inner();
-    let target = ship.translation.truncate().extend(camera_zoom.zoom_target);
+    let ship_position = ship_query.into_inner();
+    let target = ship_position.0.truncate().extend(camera_zoom.zoom_target);
     camera_transform.translation.smooth_nudge(&target, camera_zoom.zoom_speed, time.delta_secs());
+    camera_transform.look_at(ship_position.0, Vec3::Y);
 }

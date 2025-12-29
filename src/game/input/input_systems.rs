@@ -10,7 +10,7 @@ use leafwing_input_manager::prelude::*;
 use super::{input_actions::*, input_components::*};
 use crate::game::{
     scenes::scene_in_game::{PlayerReticle, PlayerShip},
-    view::view_components::{CameraZoom, GameCamera2d, GameCamera3d},
+    view::view_components::{CameraZoom, ForegroundCamera, MainCamera},
 };
 
 pub fn setup_input(
@@ -57,7 +57,7 @@ pub fn controller_ship_thrust(
 pub fn mouse_reticle_control(
     aim_query: Single<&mut Position, With<PlayerReticle>>,
     window_query: Single<&Window, With<PrimaryWindow>>,
-    camera2d_query: Single<(&Camera, &GlobalTransform), With<GameCamera2d>>,
+    camera2d_query: Single<(&Camera, &GlobalTransform), With<ForegroundCamera>>,
 ) {
     let mut reticle_position = aim_query.into_inner();
     let window = window_query.into_inner();
@@ -91,15 +91,15 @@ pub fn set_ship_course(
         &LinearVelocity,
         &mut PlayerShip,
     )>,
-    camera2d_query: Single<(&Camera, &GlobalTransform), With<GameCamera2d>>,
-    camera3d_query: Single<(&Camera, &GlobalTransform), With<GameCamera3d>>,
+    camera2d_query: Single<(&Camera, &GlobalTransform), With<ForegroundCamera>>,
+    camera3d_query: Single<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) {
     let reticle_position = reticle_query.into_inner().0.truncate();
     let (mut direction_target, ship_position, ship_rotation, ship_velocity, mut ship) =
         ship_query.into_inner();
     let ship_position = ship_position.0.truncate();
-    let velocity = ship_velocity.0.truncate().normalize();
-    let speed_is_nonzero = velocity.length_squared() > 0.;
+    let velocity_normalized = ship_velocity.0.truncate().normalize();
+    let speed_is_nonzero = velocity_normalized.length_squared() > 0.;
     const AIM_DEADZONE_RADIUS: f32 = 1.;
     let (camera2d, camera2d_transform) = camera2d_query.into_inner();
     let (camera3d, camera3d_transform) = camera3d_query.into_inner();
@@ -114,10 +114,10 @@ pub fn set_ship_course(
 
     (ship.reorient_mode, direction_target.0) =
         if ship_action.pressed(&ShipAction::OrientPrograde) && speed_is_nonzero {
-            (ReorientMode::Prograde, Dir2::new_unchecked(velocity))
+            (ReorientMode::Prograde, Dir2::new_unchecked(velocity_normalized))
         }
         else if ship_action.pressed(&ShipAction::OrientRetrograde) && speed_is_nonzero {
-            (ReorientMode::Retrograde, Rot2::from_sin_cos(0., -1.) * Dir2::new_unchecked(velocity))
+            (ReorientMode::Retrograde, Rot2::from_sin_cos(0., -1.) * Dir2::new_unchecked(velocity_normalized))
         }
         else if let Some(aim_position) = aim_position && aim_position.truncate().distance_squared(ship_position) > AIM_DEADZONE_RADIUS {
             let new_dir = Dir2::new_unchecked((aim_position.truncate() - ship_position).normalize());
@@ -160,7 +160,7 @@ pub fn seek_target_direction(
 
 pub fn scroll_zoom(
     navigation_action: Res<ActionState<NavigationAction>>,
-    query: Single<&mut CameraZoom, With<GameCamera3d>>,
+    query: Single<&mut CameraZoom, With<MainCamera>>,
 ) {
     if let Some(zoom) = navigation_action.axis_data(&NavigationAction::Zoom) {
         let mut camera_zoom = query.into_inner();

@@ -7,7 +7,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use input::InputSystems;
-use scenes::CurrentScene;
+use scenes::GameScene;
 
 #[derive(Default)]
 pub struct GamePlugin;
@@ -25,7 +25,7 @@ impl Plugin for GamePlugin {
         .configure_sets(
             FixedUpdate,
             (
-                InputSystems::InGame.run_if(in_state(CurrentScene::InGame)),
+                InputSystems::InGame.run_if(in_state(GameScene::InGame)),
             )
                 .chain(),
         );

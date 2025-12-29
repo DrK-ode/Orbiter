@@ -9,7 +9,7 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ResourceHandles>();
-        app.add_systems(PreUpdate, load_asset_resources);
+        app.add_systems(Update, load_asset_resources);
     }
 }
 
