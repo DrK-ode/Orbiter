@@ -10,7 +10,7 @@ use crate::game::{
     assets::asset_resources::*,
     input::input_components::*,
     scenes::GameScene,
-    view::CAMERA_2D_FOREGROUND_LAYER,
+    view::{BACKGROUND_LAYER, FOREGROUND_LAYER},
 };
 
 #[derive(Debug, Component, Reflect)]
@@ -53,20 +53,21 @@ pub fn spawn_in_game_screen(
     ship_assets: Res<PlayerAssets>,
     space_assets: Res<SpaceAssets>,
 ) {
-    commands.spawn((
-        Name::new("Mars"),
-        DespawnOnExit(GameScene::InGame),
-        SceneRoot(space_assets.mars_scene.clone()),
-        Transform::from_xyz(10., 0., 0.).with_scale(Vec3::new(0.01, 0.01, 0.01)),
-        Collider::sphere(400.),
-        Mass(100.),
-        NoAutoMass,
-        AngularInertia::new(Vec3::new(1., 1., 1.)),
-        NoAutoAngularInertia,
-        CenterOfMass(Vec3::ZERO),
-        AngularVelocity(Vec3::new(0.5, 0.5, 0.5)),
-        RigidBody::Kinematic,
-    ));
+    commands
+        .spawn((
+            Name::new("Mars"),
+            DespawnOnExit(GameScene::InGame),
+            SceneRoot(space_assets.mars_scene.clone()),
+            Transform::from_xyz(10., 0., 0.).with_scale(Vec3::new(0.01, 0.01, 0.01)),
+            Mass(100.),
+            NoAutoMass,
+            AngularInertia::new(Vec3::new(1., 1., 1.)),
+            NoAutoAngularInertia,
+            CenterOfMass(Vec3::ZERO),
+            AngularVelocity(Vec3::new(0.5, 0.5, 0.5)),
+            RigidBody::Kinematic,
+        ))
+        .observe(add_collider_from_meshes);
     commands
         .spawn((
             Name::new("PlayerShip"),
@@ -106,25 +107,36 @@ pub fn spawn_in_game_screen(
             custom_size: Some(Vec2::new(50., 50.)),
             ..Default::default()
         },
-        RenderLayers::layer(CAMERA_2D_FOREGROUND_LAYER),
+        RenderLayers::layer(FOREGROUND_LAYER),
+    ));
+    //
+    // Background quad
+    //
+    commands.spawn((
+        Name::new("Background"),
+        DespawnOnExit(GameScene::InGame),
+        RenderLayers::layer(BACKGROUND_LAYER),
+        Mesh3d(space_assets.starry_mesh.clone()),
+        MeshMaterial3d(space_assets.noisy_material.clone()),
+        Transform::default(),
     ));
 }
 
 fn add_collider_from_meshes(
-    event: On<SceneInstanceReady>,
+    trigger: On<SceneInstanceReady>,
     mut commands: Commands,
     children: Query<&Children>,
     meshes: Query<&Mesh3d>,
     colliders: Query<&Collider>,
 ) {
-    for entity in children.iter_descendants(event.entity) {
+    for entity in children.iter_descendants(trigger.entity) {
         if let Ok(_) = meshes.get(entity)
             && let Err(_) = colliders.get(entity)
         {
             commands.entity(entity).insert(ColliderConstructor::TrimeshFromMesh);
-            commands.entity(entity).insert(CollisionEventsEnabled);
         }
     }
+    commands.entity(trigger.observer()).despawn();
 }
 
 pub fn transition_from_in_game(

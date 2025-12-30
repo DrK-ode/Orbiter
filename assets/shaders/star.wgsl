@@ -1,9 +1,13 @@
-#import bevy_sprite::mesh2d_vertex_output::VertexOutput
-#import bevy_sprite::mesh2d_view_bindings::globals
+#import bevy_pbr::{
+    forward_io::{VertexOutput, FragmentOutput},
+    mesh_view_bindings::globals
+}
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> material_color: vec4<f32>;
-@group(#{MATERIAL_BIND_GROUP}) @binding(1) var material_color_texture: texture_2d<f32>;
-@group(#{MATERIAL_BIND_GROUP}) @binding(2) var material_color_sampler: sampler;
+//#import bevy_sprite::mesh2d_vertex_output::VertexOutput
+//#import bevy_sprite::mesh2d_view_bindings::globals
+
+// @group(#{MATERIAL_BIND_GROUP}) @binding(100) var material_color_texture: texture_2d<f32>;
+// @group(#{MATERIAL_BIND_GROUP}) @binding(101) var material_color_sampler: sampler;
 
 const iterations = 17;
 const formuparam = 0.53;
@@ -52,5 +56,5 @@ fn fragment(
 		s += stepsize;
 	}
 	v = mix(vec3(length(v)), v, saturation); //color adjust
-	return vec4(v * .01, 1.);	
+	return vec4(v * .01, 1.);
 }

@@ -2,6 +2,7 @@ pub mod assets;
 pub mod input;
 pub mod scenes;
 pub mod view;
+pub mod visuals;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -16,6 +17,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_plugins((
             assets::AssetsPlugin,
+            visuals::VisualsPlugin,
             view::ViewPlugin,
             input::InputPlugin,
             PhysicsPlugins::default(),
@@ -24,10 +26,7 @@ impl Plugin for GamePlugin {
         .insert_resource(Gravity::ZERO)
         .configure_sets(
             FixedUpdate,
-            (
-                InputSystems::InGame.run_if(in_state(GameScene::InGame)),
-            )
-                .chain(),
+            (InputSystems::InGame.run_if(in_state(GameScene::InGame)),).chain(),
         );
     }
 }

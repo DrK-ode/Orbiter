@@ -4,7 +4,7 @@ pub mod scene_in_game;
 pub mod scene_loading;
 pub mod scene_title;
 
-use bevy::prelude::*;
+use bevy::{app::HierarchyPropagatePlugin, camera::visibility::RenderLayers, prelude::*};
 
 use scene_flash::plugin_scene_splash;
 use scene_game_over::plugin_scene_game_over;
@@ -27,6 +27,7 @@ pub struct ScenesPlugin;
 impl Plugin for ScenesPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameScene>().add_plugins((
+            HierarchyPropagatePlugin::<RenderLayers>::new(PostUpdate),
             plugin_scene_splash,
             plugin_scene_title,
             plugin_scene_loading,

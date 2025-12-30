@@ -3,14 +3,16 @@ use std::f32::consts::PI;
 use avian3d::prelude::*;
 use bevy::{
     camera::visibility::RenderLayers,
+    core_pipeline::tonemapping::{DebandDither, Tonemapping},
+    post_process::bloom::Bloom,
     prelude::*,
+    render::view::Hdr,
     window::WindowResized,
 };
 
 use crate::game::{
-    assets::asset_resources::SpaceAssets,
-    scenes::{scene_in_game::PlayerShip, GameScene},
-    view::{view_components::*, CAMERA_2D_BACKGROUND_LAYER, CAMERA_2D_FOREGROUND_LAYER},
+    scenes::{GameScene, scene_in_game::PlayerShip},
+    view::{BACKGROUND_LAYER, FOREGROUND_LAYER, MAIN_LAYER, view_components::*},
 };
 
 pub fn on_window_resized(mut _messages: MessageReader<WindowResized>) {}
@@ -31,7 +33,7 @@ pub fn setup_views(mut commands: Commands) {
     ));
 }
 
-pub fn spawn_game_view(mut commands: Commands, space_assets: Res<SpaceAssets>) {
+pub fn spawn_game_view(mut commands: Commands) {
     //
     // Main camera
     //
@@ -41,12 +43,16 @@ pub fn spawn_game_view(mut commands: Commands, space_assets: Res<SpaceAssets>) {
             Name::new("GameCamera3D"),
             DespawnOnExit(GameScene::InGame),
             MainCamera,
+            RenderLayers::layer(MAIN_LAYER),
             Camera3d::default(),
             Camera {
                 order: 0,
                 clear_color: ClearColorConfig::None,
                 ..Default::default()
             },
+            Tonemapping::TonyMcMapface,
+            Bloom::default(),
+            DebandDither::Enabled,
             CameraZoom {
                 zoom_range:  10. ..100.,
                 zoom_speed:  2.,
@@ -81,13 +87,14 @@ pub fn spawn_game_view(mut commands: Commands, space_assets: Res<SpaceAssets>) {
         Name::new("Foreground Camera"),
         DespawnOnExit(GameScene::InGame),
         ForegroundCamera,
+        RenderLayers::layer(FOREGROUND_LAYER),
         Camera2d,
         Camera {
             order: 1,
             clear_color: ClearColorConfig::None,
             ..Default::default()
         },
-        RenderLayers::layer(CAMERA_2D_FOREGROUND_LAYER),
+        Hdr,
     ));
     //
     // Background camera
@@ -96,12 +103,16 @@ pub fn spawn_game_view(mut commands: Commands, space_assets: Res<SpaceAssets>) {
         Name::new("Background Camera"),
         DespawnOnExit(GameScene::InGame),
         BackgroundCamera,
-        Camera2d,
+        RenderLayers::layer(BACKGROUND_LAYER),
+        Camera3d::default(),
         Camera {
             order: -1,
             clear_color: Color::linear_rgb(0.1, 0.1, 0.2).into(),
             ..Default::default()
         },
+        Tonemapping::TonyMcMapface,
+        Bloom::default(),
+        DebandDither::Enabled,
         Projection::Orthographic(OrthographicProjection {
             scaling_mode: bevy::camera::ScalingMode::AutoMax {
                 max_width:  1.,
@@ -109,17 +120,6 @@ pub fn spawn_game_view(mut commands: Commands, space_assets: Res<SpaceAssets>) {
             },
             ..OrthographicProjection::default_2d()
         }),
-        RenderLayers::layer(CAMERA_2D_BACKGROUND_LAYER),
-    ));
-    //
-    // Background quad
-    //
-    commands.spawn((
-        Name::new("Background"),
-        RenderLayers::layer(CAMERA_2D_BACKGROUND_LAYER),
-        Mesh2d(space_assets.starry_mesh.clone()),
-        MeshMaterial2d(space_assets.starry_material.clone()),
-        Transform::default(),
     ));
 }
 
