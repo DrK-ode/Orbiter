@@ -1,7 +1,6 @@
-use bevy::{asset::RenderAssetUsages, prelude::*, render::storage::ShaderStorageBuffer};
-use noiz::prelude::*;
+use bevy::prelude::*;
 
-use crate::game::visuals::shader_background::{NoisyMaterial, StarryMaterial};
+use crate::game::visuals::materials::BackgroundMaterial;
 
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
@@ -30,13 +29,11 @@ impl FromWorld for PlayerAssets {
 #[reflect(Resource)]
 pub struct SpaceAssets {
     #[dependency]
-    pub mars_scene:      Handle<Scene>,
+    pub mars_scene:     Handle<Scene>,
     #[dependency]
-    pub starry_mesh:     Handle<Mesh>,
+    pub starry_mesh:    Handle<Mesh>,
     #[dependency]
-    pub starry_material: Handle<StarryMaterial>,
-    #[dependency]
-    pub noisy_material:  Handle<NoisyMaterial>,
+    pub noisy_material: Handle<BackgroundMaterial>,
 }
 
 impl FromWorld for SpaceAssets {
@@ -45,32 +42,14 @@ impl FromWorld for SpaceAssets {
             let mars_scene =
                 asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/mars.glb"));
             let starry_mesh = asset_server.add(Rectangle::new(1., 1.).into());
-            let starry_material = asset_server.add(StarryMaterial {});
-            let mut noise = Noise::<PerCell<SimplexGrid, Random<UNorm, f32>>>::default();
-            noise.set_seed(1234);
-            let width = 1000;
-            let height = 1000;
-            let mut data: Vec<f32> = Vec::with_capacity(width * height);
-            for y in 0..height {
-                for x in 0..width {
-                    let value = noise.sample_for::<f32>(Vec2::new(x as f32 / 10., y as f32 / 10.));
-                    // let value = if x > 49 { 255u8 } else { 0u8 };
-                    data.push(value);
-                }
-            }
-            let mut data = ShaderStorageBuffer::from(data);
-            data.asset_usage = RenderAssetUsages::RENDER_WORLD;
-            let data = asset_server.add(data);
-            let noisy_material = asset_server.add(NoisyMaterial {
-                noise_data: data.clone(),
-                noise_width: width as u32,
-                noise_height: height as u32,
-                star_color: LinearRgba::GREEN,
+            let noisy_material = asset_server.add(BackgroundMaterial {
+                min_z: 10.,
+                max_z: 100.,
+                zoom_factor: 0.5,
             });
             Self {
                 mars_scene,
                 starry_mesh,
-                starry_material,
                 noisy_material,
             }
         })

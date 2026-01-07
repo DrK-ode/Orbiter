@@ -1437,6 +1437,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_shader_utils"
+version = "0.9.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01161191b7dca2c6c674dfa07871745658621e3623e88c0beb86ba636f617d17"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_sprite"
 version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4313,6 +4322,7 @@ dependencies = [
  "avian3d",
  "bevy",
  "bevy-inspector-egui",
+ "bevy_shader_utils",
  "enum-collections",
  "leafwing-input-manager",
  "log",

@@ -11,11 +11,20 @@ use bevy::{
 };
 
 use crate::game::{
-    scenes::{GameScene, scene_in_game::PlayerShip},
-    view::{BACKGROUND_LAYER, FOREGROUND_LAYER, MAIN_LAYER, view_components::*},
+    scenes::{scene_in_game::PlayerShip, GameScene},
+    view::{view_components::*, BACKGROUND_LAYER, FOREGROUND_LAYER, MAIN_LAYER},
+    visuals::visuals_components::BackgroundQuad,
 };
 
-pub fn on_window_resized(mut _messages: MessageReader<WindowResized>) {}
+pub fn on_window_resized(
+    mut messages: MessageReader<WindowResized>,
+    background_query: Single<&mut Transform, With<BackgroundQuad>>,
+) {
+    let mut background_transform = background_query.into_inner();
+    for message in messages.read() {
+        background_transform.scale = Vec3::new(1.0, message.height / message.width, 1.);
+    }
+}
 
 pub fn setup_views(mut commands: Commands) {
     //
@@ -38,48 +47,70 @@ pub fn spawn_game_view(mut commands: Commands) {
     // Main camera
     //
     const MAIN_CAMERA_STARTING_POSITION: Vec3 = Vec3::new(0., 0., 10.);
-    commands
-        .spawn((
-            Name::new("GameCamera3D"),
-            DespawnOnExit(GameScene::InGame),
-            MainCamera,
-            RenderLayers::layer(MAIN_LAYER),
-            Camera3d::default(),
-            Camera {
-                order: 0,
-                clear_color: ClearColorConfig::None,
-                ..Default::default()
-            },
-            Tonemapping::TonyMcMapface,
-            Bloom::default(),
-            DebandDither::Enabled,
-            CameraZoom {
-                zoom_range:  10. ..100.,
-                zoom_speed:  2.,
-                zoom_factor: 0.1,
-                zoom_target: MAIN_CAMERA_STARTING_POSITION.z,
-            },
-            Projection::Perspective(PerspectiveProjection {
-                fov: PI / 4.,
-                ..Default::default()
-            }),
-            Transform::from_translation(MAIN_CAMERA_STARTING_POSITION),
-        ))
+    commands.spawn((
+        Name::new("GameCamera3D"),
+        DespawnOnExit(GameScene::InGame),
+        MainCamera,
+        RenderLayers::layer(MAIN_LAYER),
+        Camera3d::default(),
+        Camera {
+            order: 0,
+            clear_color: ClearColorConfig::None,
+            ..Default::default()
+        },
+        Tonemapping::TonyMcMapface,
+        Bloom::default(),
+        DebandDither::Enabled,
+        CameraZoom {
+            zoom_range:  10. ..100.,
+            zoom_speed:  2.,
+            zoom_factor: 0.1,
+            zoom_target: MAIN_CAMERA_STARTING_POSITION.z,
+        },
+        Projection::Perspective(PerspectiveProjection {
+            fov: PI / 4.,
+            ..Default::default()
+        }),
+        Transform::from_translation(MAIN_CAMERA_STARTING_POSITION),
+    ));
+    commands.spawn((
         //
-        // Game light
+        // Background camera
         //
-        .with_child((
-            Name::new("GameLight"),
-            DespawnOnExit(GameScene::InGame),
-            GameLight,
-            DirectionalLight {
-                color: Color::WHITE,
-                illuminance: 10_000.,
-                shadows_enabled: true,
-                ..Default::default()
-            },
-            Transform::from_xyz(0., 0., 0.).looking_at((0., 0., 0.).into(), Vec3::Y),
-        ));
+        Name::new("Background Camera"),
+        DespawnOnExit(GameScene::InGame),
+        BackgroundCamera,
+        RenderLayers::layer(BACKGROUND_LAYER),
+        Camera3d::default(),
+        Camera {
+            order: -1,
+            clear_color: Color::linear_rgb(0.1, 0.1, 0.2).into(),
+            ..Default::default()
+        },
+        Tonemapping::TonyMcMapface,
+        Bloom::default(),
+        DebandDither::Enabled,
+        Projection::Orthographic(OrthographicProjection {
+            scaling_mode: bevy::camera::ScalingMode::FixedHorizontal { viewport_width: 1. },
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
+    //
+    // Game light
+    //
+    commands.spawn((
+        Name::new("GameLight"),
+        DespawnOnExit(GameScene::InGame),
+        GameLight,
+        DirectionalLight {
+            color: Color::WHITE,
+            illuminance: 10_000.,
+            shadows_enabled: true,
+            ..Default::default()
+        },
+        Transform::from_translation(MAIN_CAMERA_STARTING_POSITION)
+            .looking_at((0., 0., 0.).into(), Vec3::Y),
+    ));
     //
     // Foreground camera
     //
@@ -95,31 +126,6 @@ pub fn spawn_game_view(mut commands: Commands) {
             ..Default::default()
         },
         Hdr,
-    ));
-    //
-    // Background camera
-    //
-    commands.spawn((
-        Name::new("Background Camera"),
-        DespawnOnExit(GameScene::InGame),
-        BackgroundCamera,
-        RenderLayers::layer(BACKGROUND_LAYER),
-        Camera3d::default(),
-        Camera {
-            order: -1,
-            clear_color: Color::linear_rgb(0.1, 0.1, 0.2).into(),
-            ..Default::default()
-        },
-        Tonemapping::TonyMcMapface,
-        Bloom::default(),
-        DebandDither::Enabled,
-        Projection::Orthographic(OrthographicProjection {
-            scaling_mode: bevy::camera::ScalingMode::AutoMax {
-                max_width:  1.,
-                max_height: 1.,
-            },
-            ..OrthographicProjection::default_2d()
-        }),
     ));
 }
 
@@ -140,14 +146,29 @@ pub fn spawn_other_view(mut commands: Commands) {
     ));
 }
 
-pub fn move_camera(
+pub fn move_main_camera(
     time: Res<Time>,
-    camera_query: Single<(&mut Transform, &CameraZoom), (With<MainCamera>, Without<PlayerShip>)>,
+    main_camera_query: Single<
+        (&mut Transform, &CameraZoom),
+        (With<MainCamera>, (Without<PlayerShip>, Without<GameLight>)),
+    >,
+    light_query: Single<&mut Transform, (With<GameLight>, Without<PlayerShip>)>,
     ship_query: Single<&Position, With<PlayerShip>>,
 ) {
-    let (mut camera_transform, camera_zoom) = camera_query.into_inner();
+    let (mut camera_transform, camera_zoom) = main_camera_query.into_inner();
+    let mut light_transform = light_query.into_inner();
     let ship_position = ship_query.into_inner();
     let target = ship_position.0.truncate().extend(camera_zoom.zoom_target);
     camera_transform.translation.smooth_nudge(&target, camera_zoom.zoom_speed, time.delta_secs());
     camera_transform.look_at(ship_position.0, Vec3::Y);
+    light_transform.translation = ship_position.0;
+}
+
+pub fn move_background_camera(
+    background_camera_query: Single<&mut Transform, (With<BackgroundCamera>, Without<MainCamera>)>,
+    main_camera_query: Single<&Transform, With<MainCamera>>,
+) {
+    let mut background_camera_transform = background_camera_query.into_inner();
+    let main_camera_transform = main_camera_query.into_inner();
+    background_camera_transform.translation = main_camera_transform.translation;
 }

@@ -1,4 +1,5 @@
 unstable_features = true
+comment_width = 100
 control_brace_style = "ClosingNextLine"
 enum_discrim_align_threshold = 20
 fn_single_line = false
@@ -13,6 +14,7 @@ struct_field_align_threshold = 5
 style_edition = "2021"
 tab_spaces = 4
 use_small_heuristics = "Max"
+wrap_comments = true
 # fn_call_width=60
 attr_fn_like_width=80
 struct_lit_width=18

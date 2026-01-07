@@ -18,6 +18,12 @@ impl Plugin for ViewPlugin {
             .add_systems(OnEnter(GameScene::InGame), spawn_game_view)
             .add_systems(OnExit(GameScene::InGame), spawn_other_view)
             .add_systems(PreUpdate, on_window_resized.run_if(on_message::<WindowResized>))
-            .add_systems(FixedUpdate, move_camera.run_if(in_state(GameScene::InGame)));
+            .add_systems(
+                FixedUpdate,
+                (
+                    move_main_camera.run_if(in_state(GameScene::InGame)),
+                    move_background_camera.run_if(in_state(GameScene::InGame)),
+                ),
+            );
     }
 }

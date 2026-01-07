@@ -4,6 +4,7 @@ use bevy::{
     color::palettes::css::PINK,
     prelude::*,
     scene::SceneInstanceReady,
+    window::PrimaryWindow,
 };
 
 use crate::game::{
@@ -11,6 +12,7 @@ use crate::game::{
     input::input_components::*,
     scenes::GameScene,
     view::{BACKGROUND_LAYER, FOREGROUND_LAYER},
+    visuals::visuals_components::BackgroundQuad,
 };
 
 #[derive(Debug, Component, Reflect)]
@@ -52,7 +54,9 @@ pub fn spawn_in_game_screen(
     mut commands: Commands,
     ship_assets: Res<PlayerAssets>,
     space_assets: Res<SpaceAssets>,
+    window_query: Single<&Window, With<PrimaryWindow>>,
 ) {
+    let window = window_query.into_inner();
     commands
         .spawn((
             Name::new("Mars"),
@@ -64,7 +68,7 @@ pub fn spawn_in_game_screen(
             AngularInertia::new(Vec3::new(1., 1., 1.)),
             NoAutoAngularInertia,
             CenterOfMass(Vec3::ZERO),
-            AngularVelocity(Vec3::new(0.5, 0.5, 0.5)),
+            AngularVelocity(Vec3::new(0.3, 0.1, 0.2)),
             RigidBody::Kinematic,
         ))
         .observe(add_collider_from_meshes);
@@ -115,10 +119,11 @@ pub fn spawn_in_game_screen(
     commands.spawn((
         Name::new("Background"),
         DespawnOnExit(GameScene::InGame),
+        BackgroundQuad,
         RenderLayers::layer(BACKGROUND_LAYER),
         Mesh3d(space_assets.starry_mesh.clone()),
         MeshMaterial3d(space_assets.noisy_material.clone()),
-        Transform::default(),
+        Transform::from_scale(Vec3::new(1., window.height() / window.width(), 1.)),
     ));
 }
 

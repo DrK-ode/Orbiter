@@ -3,6 +3,9 @@ use std::ops::Range;
 use bevy::prelude::*;
 
 #[derive(Component, Debug, Reflect)]
+pub struct CameraMan;
+
+#[derive(Component, Debug, Reflect)]
 pub struct MainCamera;
 
 #[derive(Component, Debug, Reflect)]
