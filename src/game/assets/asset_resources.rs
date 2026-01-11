@@ -57,7 +57,6 @@ impl FromWorld for SpaceAssets {
             let noisy_material = asset_server.add(BackgroundMaterial {
                 min_z: 10.,
                 max_z: 100.,
-                zoom_factor: 0.5,
             });
             Self {
                 mars_scene,

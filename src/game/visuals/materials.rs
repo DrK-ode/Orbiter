@@ -10,8 +10,6 @@ pub struct BackgroundMaterial {
     pub min_z: f32,
     #[uniform(101)]
     pub max_z: f32,
-    #[uniform(101)]
-    pub zoom_factor: f32,
 }
 
 impl BackgroundMaterial {
