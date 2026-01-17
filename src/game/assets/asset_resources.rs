@@ -1,18 +1,19 @@
 use bevy::prelude::*;
 
-use crate::game::visuals::materials::BackgroundMaterial;
+use crate::game::{
+    ui::hud::speedometer::SpeedometerMaterial,
+    visuals::materials::BackgroundMaterial,
+};
 
 #[derive(Resource, Asset, Clone, Reflect)]
 #[reflect(Resource)]
 pub struct PlayerAssets {
     #[dependency]
-    pub ship_scene:    Handle<Scene>,
+    pub ship_scene: Handle<Scene>,
     #[dependency]
     pub reticle_image: Handle<Image>,
     #[dependency]
-    pub speedometer_image: Handle<Image>,
-    #[dependency]
-    pub speedometer_needle_image: Handle<Image>,
+    pub speedometer_material: Handle<SpeedometerMaterial>,
     #[dependency]
     pub compass_needle_image: Handle<Image>,
 }
@@ -23,14 +24,12 @@ impl FromWorld for PlayerAssets {
             let ship_scene =
                 asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/ship.glb"));
             let reticle_image = asset_server.load("images/reticle.png");
-            let speedometer_image = asset_server.load("images/speedometer.png");
-            let speedometer_needle_image = asset_server.load("images/speedometer_needle.png");
+            let speedometer_material = asset_server.add(SpeedometerMaterial { relative_speed: 0. });
             let compass_needle_image = asset_server.load("images/compass_needle.png");
             Self {
                 ship_scene,
                 reticle_image,
-                speedometer_image,
-                speedometer_needle_image,
+                speedometer_material,
                 compass_needle_image,
             }
         })

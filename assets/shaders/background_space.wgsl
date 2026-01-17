@@ -1,6 +1,4 @@
-#import bevy_pbr::{
-    forward_io::{VertexOutput, FragmentOutput},
-}
+#import bevy_pbr::forward_io::VertexOutput
 #import bevy_shader_utils::perlin_noise_2d::perlin_noise_2d
 
 struct Material {

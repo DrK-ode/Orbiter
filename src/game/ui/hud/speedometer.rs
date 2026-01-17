@@ -1,7 +1,5 @@
-use std::f32::consts::PI;
-
 use avian3d::prelude::{LinearVelocity, MaxLinearSpeed};
-use bevy::prelude::*;
+use bevy::{prelude::*, render::render_resource::AsBindGroup};
 
 use crate::game::{
     assets::asset_resources::PlayerAssets,
@@ -9,10 +7,22 @@ use crate::game::{
 };
 
 #[derive(Component, Debug, Reflect)]
-pub struct SpeedometerNeedle;
+pub struct Speedometer;
 
 #[derive(Component, Debug, Reflect)]
 pub struct SpeedText;
+
+#[derive(AsBindGroup, Asset, TypePath, Debug, Clone)]
+pub struct SpeedometerMaterial {
+    #[uniform(0)]
+    pub relative_speed: f32,
+}
+
+impl UiMaterial for SpeedometerMaterial {
+    fn fragment_shader() -> bevy::shader::ShaderRef {
+        "shaders/speedometer.wgsl".into()
+    }
+}
 
 pub fn spawn_speedometer(mut commands: Commands, player_assets: Res<PlayerAssets>) {
     commands.spawn((
@@ -29,17 +39,15 @@ pub fn spawn_speedometer(mut commands: Commands, player_assets: Res<PlayerAssets
         },
         children![(
             Name::new("Speedometer"),
-            ImageNode::new(player_assets.speedometer_image.clone()),
+            Speedometer,
+            MaterialNode(player_assets.speedometer_material.clone()),
             Node {
+                width: vw(100.),
+                aspect_ratio: Some(1.),
                 justify_content: JustifyContent::Center,
                 ..Default::default()
             },
             children![
-                (
-                    Name::new("SpeedometerNeedle"),
-                    SpeedometerNeedle,
-                    ImageNode::new(player_assets.speedometer_needle_image.clone())
-                ),
                 (
                     Name::new("SpeedText"),
                     SpeedText,
@@ -59,15 +67,18 @@ pub fn spawn_speedometer(mut commands: Commands, player_assets: Res<PlayerAssets
 }
 
 pub fn update_speedometer(
-    needle_query: Single<&mut UiTransform, With<SpeedometerNeedle>>,
+    mut materials: ResMut<Assets<SpeedometerMaterial>>,
+    material_node_query: Single<&MaterialNode<SpeedometerMaterial>, With<Speedometer>>,
     text_query: Single<&mut Text, With<SpeedText>>,
     velocity_query: Single<(&LinearVelocity, &MaxLinearSpeed), With<PlayerShip>>,
 ) {
-    let mut needle_image_node = needle_query.into_inner();
+    let material_handle = &material_node_query.into_inner().0;
     let mut text = text_query.into_inner();
     let (velocity, max_speed) = velocity_query.into_inner();
-    let speed = velocity.length();
-    text.0 = format!("{:.1}\npc/h", speed);
-    let angle = speed / max_speed.0 * 14. / 9. * PI;
-    needle_image_node.rotation = Rot2::radians(angle);
+    
+    let relative_speed = velocity.length() / max_speed.0;
+    if let Some(material) = materials.get_mut(material_handle){
+        material.relative_speed = relative_speed;
+    }
+    text.0 = format!("{:.1}\npc/h", relative_speed);
 }
