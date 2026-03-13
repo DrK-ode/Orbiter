@@ -44,6 +44,7 @@ pub fn log_state_change_request(state: Res<NextState<GameScene>>) {
         NextState::Pending(state) => {
             info!("State requested to change to {:#?}.", state);
         },
+        NextState::PendingIfNeq(_) => {},
     };
 }
 

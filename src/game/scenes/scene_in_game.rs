@@ -9,6 +9,7 @@ use bevy::{
 
 use crate::game::{
     assets::asset_resources::*,
+    gravity::{GravitationalAttraction, GravitationalMass, GravitationalPull},
     input::input_components::*,
     scenes::GameScene,
     view::{BACKGROUND_LAYER, FOREGROUND_LAYER},
@@ -59,29 +60,36 @@ pub fn spawn_in_game_screen(
     let window = window_query.into_inner();
     commands
         .spawn((
-            Name::new("Mars"),
-            DespawnOnExit(GameScene::InGame),
-            SceneRoot(space_assets.mars_scene.clone()),
-            Transform::from_xyz(0., 0., 0.).with_scale(Vec3::splat(0.005)),
-            Mass(100.),
-            NoAutoMass,
-            AngularInertia::new(Vec3::new(1., 1., 1.)),
-            NoAutoAngularInertia,
-            CenterOfMass(Vec3::ZERO),
-            AngularVelocity(Vec3::new(0.3, 0.1, 0.2)),
-            RigidBody::Kinematic,
+            (
+                Name::new("Mars"),
+                DespawnOnExit(GameScene::InGame),
+                SceneRoot(space_assets.mars_scene.clone()),
+            ),
+            (
+                Transform::from_xyz(0., 0., 0.).with_scale(Vec3::splat(0.005)),
+                Mass(100.),
+                NoAutoMass,
+                AngularInertia::new(Vec3::new(1., 1., 1.)),
+                NoAutoAngularInertia,
+                CenterOfMass(Vec3::ZERO),
+                AngularVelocity(Vec3::new(0.3, 0.1, 0.2)),
+                RigidBody::Kinematic,
+            ),
+            (GravitationalMass(100.), GravitationalPull { mass_radius: 10. }),
         ))
         .observe(add_collider_from_meshes);
     commands
         .spawn((
-            Name::new("PlayerShip"),
-            DespawnOnExit(GameScene::InGame),
-            PlayerShip {
-                thrust: 5.,
-                reorient_mode: Default::default(),
-            },
-            DirectionTarget(Dir2::Y),
-            SceneRoot(ship_assets.ship_scene.clone()),
+            (
+                Name::new("PlayerShip"),
+                DespawnOnExit(GameScene::InGame),
+                PlayerShip {
+                    thrust: 5.,
+                    reorient_mode: Default::default(),
+                },
+                DirectionTarget(Dir2::Y),
+                SceneRoot(ship_assets.ship_scene.clone()),
+            ),
             (
                 RigidBody::Dynamic,
                 LockedAxes::new().lock_rotation_x().lock_rotation_y().lock_translation_z(),
@@ -97,6 +105,7 @@ pub fn spawn_in_game_screen(
                 CenterOfMass(Vec3::ZERO),
                 AngularInertia::new(Vec3::new(1., 1., 1.)),
             ),
+            (GravitationalMass(1.), GravitationalAttraction),
         ))
         .observe(add_collider_from_meshes);
     commands.spawn((
@@ -113,9 +122,6 @@ pub fn spawn_in_game_screen(
         },
         RenderLayers::layer(FOREGROUND_LAYER),
     ));
-    //
-    // Background quad
-    //
     commands.spawn((
         Name::new("Background"),
         DespawnOnExit(GameScene::InGame),
